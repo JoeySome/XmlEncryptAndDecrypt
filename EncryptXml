@@ -1,0 +1,85 @@
+public class EncryptXml
+    {
+        public static bool Encrypt(XmlElement xmlElement, SymmetricAlgorithm key)
+        {
+            try
+            {
+                if (xmlElement == null)
+                {
+                    return false;
+                }
+                if (key == null)
+                {
+                    return false;
+                }
+                EncryptedXml encryptedXml = new EncryptedXml();
+                byte[] encryptedElement = encryptedXml.EncryptData(xmlElement, key, true);
+                EncryptedData encryptedData = new EncryptedData();
+                encryptedData.Type = EncryptedXml.XmlEncElementUrl;
+                string encryptionMethod = null;
+                if (key is TripleDES)
+                {
+                    encryptionMethod = EncryptedXml.XmlEncTripleDESUrl;
+                }
+                else if (key is DES)
+                {
+                    encryptionMethod = EncryptedXml.XmlEncDESUrl;
+                }
+                else if (key is Rijndael)
+                {
+                    switch (key.KeySize)
+                    {
+                        case 128:
+                            encryptionMethod = EncryptedXml.XmlEncAES128Url;
+                            break;
+                        case 192:
+                            encryptionMethod = EncryptedXml.XmlEncAES192Url;
+                            break;
+                        case 256:
+                            encryptionMethod = EncryptedXml.XmlEncAES256Url;
+                            break;
+                    }
+                }
+                else
+                {
+                    return false;
+                }
+                encryptedData.EncryptionMethod = new EncryptionMethod(encryptionMethod);
+                encryptedData.CipherData.CipherValue = encryptedElement;
+                EncryptedXml.ReplaceElement(xmlElement, encryptedData, true);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+        public static bool Decrypt(XmlElement xmlElement, SymmetricAlgorithm key)
+        {
+            try
+            {
+                if (xmlElement == null)
+                {
+                    return false;
+                }
+                if (key == null)
+                {
+                    return false;
+                }
+                EncryptedData edElement = new EncryptedData();
+                XmlElement encryptedElement = xmlElement.GetElementsByTagName("EncryptedData")[0] as XmlElement;
+                edElement.LoadXml(encryptedElement);
+                EncryptedXml encryptedXml = new EncryptedXml();
+                byte[] rgbOutput = encryptedXml.DecryptData(edElement, key);
+                encryptedXml.ReplaceData(encryptedElement, rgbOutput);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                return false;
+            }
+        }
+
+
+    }
